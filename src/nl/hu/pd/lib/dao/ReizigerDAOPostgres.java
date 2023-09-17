@@ -1,6 +1,7 @@
 package nl.hu.pd.lib.dao;
 
 import nl.hu.pd.lib.daoInterface.ReizigerDAO;
+import nl.hu.pd.lib.model.Adres;
 import nl.hu.pd.lib.model.Reiziger;
 import org.postgresql.util.PSQLException;
 
@@ -11,9 +12,11 @@ import java.util.List;
 
 public class ReizigerDAOPostgres implements ReizigerDAO {
     private Connection conn;
+    private AdresDAOPostgres ADP;
 
     public ReizigerDAOPostgres(Connection conn) {
         this.conn = conn;
+        ADP = new AdresDAOPostgres(conn);
     }
 
     public boolean save(Reiziger reiziger){
@@ -26,6 +29,10 @@ public class ReizigerDAOPostgres implements ReizigerDAO {
             ps.setString(4, reiziger.getAchternaam());
             ps.setDate(5, Date.valueOf(reiziger.getGeboortedatum()));
             ps.executeUpdate();
+            ps.close();
+            if (reiziger.getAdres() != null){ // adres niet null is, sla het adres ook op
+                ADP.save(reiziger.getAdres());
+            }
             return true;
         }
         catch (SQLException e){
@@ -43,6 +50,9 @@ public class ReizigerDAOPostgres implements ReizigerDAO {
             preparedStatement.setInt(5, reiziger.getId());
             preparedStatement.executeUpdate();
             preparedStatement.close();
+            if (reiziger.getAdres() != null){ // als reiziger adres heeft, moet dat ook opgeslagen worden
+                ADP.update(reiziger.getAdres());
+            }
             return true;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -52,9 +62,15 @@ public class ReizigerDAOPostgres implements ReizigerDAO {
 
     public boolean delete(Reiziger reiziger) {
         try {
+            ReizigerDAO rdao = new ReizigerDAOPostgres(conn);// checken of er ook adres bestaat ...
+            Reiziger r = rdao.findById(reiziger.getId()); // ivm foreign_key constraint violation
+            if (r.getAdres() != null){ // eerst adres verwijderen als dat bestaat
+                ADP.delete(r.getAdres());
+            }
             PreparedStatement preparedStatement = conn.prepareStatement("DELETE FROM reiziger WHERE reiziger_id=?");
             preparedStatement.setInt(1, reiziger.getId());
             preparedStatement.executeUpdate();
+            preparedStatement.close();
             return true;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -75,7 +91,10 @@ public class ReizigerDAOPostgres implements ReizigerDAO {
                 LocalDate geboortedatumLocal = geboortedatum.toLocalDate();
                 resultSet.close();
                 preparedStatement.close();
-                return new Reiziger(id, voorletters, tussenvoegsel, achternaam, geboortedatumLocal);
+                Reiziger reiziger = new Reiziger(id, voorletters, tussenvoegsel, achternaam, geboortedatumLocal);
+                Adres adres = ADP.findByReiziger(reiziger); // adres opzoeken
+                reiziger.setAdres(adres); // adres toevoegen aan reiziger
+                return reiziger;
             }
             resultSet.close();
             preparedStatement.close();
@@ -101,6 +120,8 @@ public class ReizigerDAOPostgres implements ReizigerDAO {
                 java.sql.Date geboortedatum = resultSet.getDate("geboortedatum");
                 LocalDate geboortedatumLocal = geboortedatum.toLocalDate();
                 Reiziger reiziger = new Reiziger(id, voorletters, tussenvoegsel, achternaam, geboortedatumLocal);
+                Adres adres = ADP.findByReiziger(reiziger); // adres opzoeken
+                reiziger.setAdres(adres); // adres toevoegen aan reiziger
                 reizigers.add(reiziger);
             }
             resultSet.close();
@@ -116,7 +137,6 @@ public class ReizigerDAOPostgres implements ReizigerDAO {
         try {
             PreparedStatement preparedStatement = conn.prepareStatement("SELECT * FROM reiziger");
             ResultSet resultSet = preparedStatement.executeQuery();
-
             while (resultSet.next()) {
                 int id = resultSet.getInt("reiziger_id");
                 String voorletters = resultSet.getString("voorletters");
@@ -124,6 +144,8 @@ public class ReizigerDAOPostgres implements ReizigerDAO {
                 String achternaam = resultSet.getString("achternaam");
                 java.sql.Date geboortedatum = resultSet.getDate("geboortedatum");
                 Reiziger reiziger = new Reiziger(id, voorletters, tussenvoegsel, achternaam, geboortedatum.toLocalDate());
+                Adres adres = ADP.findByReiziger(reiziger); // adres opzoeken en toevoegen aan reiziger object
+                reiziger.setAdres(adres);
                 reizigers.add(reiziger);
             }
             resultSet.close();
