@@ -6,6 +6,8 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface ReizigerDAO {
+
+    public void setAdresDAO(AdresDAO adresDAO);
     public boolean save(Reiziger reiziger);
     public boolean update(Reiziger reiziger);
     public boolean delete(Reiziger reiziger);

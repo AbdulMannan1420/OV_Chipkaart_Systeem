@@ -1,6 +1,7 @@
 package nl.hu.pd.lib.dao;
 
 import nl.hu.pd.lib.daoInterface.AdresDAO;
+import nl.hu.pd.lib.daoInterface.ReizigerDAO;
 import nl.hu.pd.lib.model.Adres;
 import nl.hu.pd.lib.model.Reiziger;
 
@@ -13,9 +14,14 @@ import java.util.List;
 
 public class AdresDAOPostgres implements AdresDAO {
     private Connection conn;
+    private ReizigerDAO reizigerDAO;
 
     public AdresDAOPostgres(Connection conn) {
         this.conn = conn;
+    }
+
+    public void setReizigerDAO(ReizigerDAO reizigerDAO) {
+        this.reizigerDAO = reizigerDAO;
     }
 
     public boolean save(Adres adres) {
@@ -30,7 +36,7 @@ public class AdresDAOPostgres implements AdresDAO {
             ps.setString(3,adres.getHuisnummer());
             ps.setString(4, adres.getStraat());
             ps.setString(5, adres.getWoonplaats());
-            ps.setInt(6,adres.getAdres_id());
+            ps.setInt(6,adres.getReiziger().getId());
             ps.executeUpdate();
             ps.close();
             return true;
@@ -54,7 +60,7 @@ public class AdresDAOPostgres implements AdresDAO {
             ps.setString(3,adres.getHuisnummer());
             ps.setString(4, adres.getStraat());
             ps.setString(5, adres.getWoonplaats());
-            ps.setInt(6,adres.getReiziger_id());
+            ps.setInt(6,adres.getReiziger().getId());
             ps.executeUpdate();
             ps.close();
             return true;
@@ -72,7 +78,7 @@ public class AdresDAOPostgres implements AdresDAO {
                 """;
         try {
             PreparedStatement ps = conn.prepareStatement(query);
-            ps.setInt(1,adres.getReiziger_id());
+            ps.setInt(1,adres.getReiziger().getId());
             ps.executeUpdate();
             ps.close();
             return true;
@@ -83,10 +89,11 @@ public class AdresDAOPostgres implements AdresDAO {
 
     public Adres findByReiziger(Reiziger reiziger) {
         String query= """
-                SELECT adres_id,postcode,huisnummer,straat,woonplaats,reiziger_id
+                SELECT adres_id,postcode,huisnummer,straat,woonplaats, reiziger_id
                 FROM adres
                 WHERE reiziger_id = ?
                 """;
+        Adres adres = null;
         try {
             PreparedStatement ps = conn.prepareStatement(query);
             ps.setInt(1,reiziger.getId());
@@ -98,14 +105,14 @@ public class AdresDAOPostgres implements AdresDAO {
                 String straat = rs.getString("straat");
                 String woonplaats = rs.getString("woonplaats");
                 int reiziger_id = rs.getInt("reiziger_id");
-                return new Adres(adres_id,postcode,huisnummer,straat,woonplaats,reiziger_id);
+                adres = new Adres(adres_id,postcode,huisnummer,straat,woonplaats,reiziger);
             }
             rs.close();
             ps.close();
         }catch (SQLException e){
             e.printStackTrace();
         }
-        return null;
+        return adres;
     }
 
     public List<Adres> findAll() {
@@ -124,7 +131,8 @@ public class AdresDAOPostgres implements AdresDAO {
                 String straat = rs.getString("straat");
                 String woonplaats = rs.getString("woonplaats");
                 int reiziger_id = rs.getInt("reiziger_id");
-                Adres adres = new Adres(adres_id,postcode,huisnummer,straat,woonplaats,reiziger_id);
+                Reiziger r = reizigerDAO.findById(reiziger_id);
+                Adres adres = new Adres(adres_id,postcode,huisnummer,straat,woonplaats,r);
                 adressen.add(adres);
             }
             rs.close();

@@ -1,5 +1,6 @@
 package nl.hu.pd.lib.dao;
 
+import nl.hu.pd.lib.daoInterface.AdresDAO;
 import nl.hu.pd.lib.daoInterface.ReizigerDAO;
 import nl.hu.pd.lib.model.Adres;
 import nl.hu.pd.lib.model.Reiziger;
@@ -12,11 +13,15 @@ import java.util.List;
 
 public class ReizigerDAOPostgres implements ReizigerDAO {
     private Connection conn;
-    private AdresDAOPostgres ADP;
+    private AdresDAO ADP;
 
     public ReizigerDAOPostgres(Connection conn) {
         this.conn = conn;
-        ADP = new AdresDAOPostgres(conn);
+    }
+
+
+    public void setAdresDAO(AdresDAO adresDAO) {
+        this.ADP = adresDAO;
     }
 
     public boolean save(Reiziger reiziger){
@@ -62,10 +67,8 @@ public class ReizigerDAOPostgres implements ReizigerDAO {
 
     public boolean delete(Reiziger reiziger) {
         try {
-            ReizigerDAO rdao = new ReizigerDAOPostgres(conn);// checken of er ook adres bestaat ...
-            Reiziger r = rdao.findById(reiziger.getId()); // ivm foreign_key constraint violation
-            if (r.getAdres() != null){ // eerst adres verwijderen als dat bestaat
-                ADP.delete(r.getAdres());
+            if (reiziger.getAdres() != null){  // adres checken van reiziger klasse maar niet in db
+                ADP.delete(reiziger.getAdres());
             }
             PreparedStatement preparedStatement = conn.prepareStatement("DELETE FROM reiziger WHERE reiziger_id=?");
             preparedStatement.setInt(1, reiziger.getId());
@@ -79,8 +82,13 @@ public class ReizigerDAOPostgres implements ReizigerDAO {
     }
 
     public Reiziger findById(int id) {
+        String query = """
+                SELECT  voorletters, tussenvoegsel, achternaam,geboortedatum
+                FROM reiziger 
+                WHERE reiziger_id=?
+                """;
         try {
-            PreparedStatement preparedStatement = conn.prepareStatement("SELECT * FROM reiziger WHERE reiziger_id=?");
+            PreparedStatement preparedStatement = conn.prepareStatement(query);
             preparedStatement.setInt(1, id);
             ResultSet resultSet = preparedStatement.executeQuery();
             if (resultSet.next()) {  // checken of er een reiziger met gegeven id bestaat en is returned
@@ -106,9 +114,13 @@ public class ReizigerDAOPostgres implements ReizigerDAO {
     }
     public List<Reiziger> findByGbdatum(LocalDate ld) {
         List<Reiziger> reizigers = new ArrayList<>();
-
+        String query = """
+                SELECT reiziger_id, voorletters, tussenvoegsel, achternaam, geboortedatum
+                FROM reiziger
+                WHERE geboortedatum=?
+                """;
         try {
-            PreparedStatement preparedStatement = conn.prepareStatement("SELECT * FROM reiziger WHERE geboortedatum=?");
+            PreparedStatement preparedStatement = conn.prepareStatement(query);
             java.sql.Date sqlDate = java.sql.Date.valueOf(ld);
             preparedStatement.setDate(1, sqlDate);
             ResultSet resultSet = preparedStatement.executeQuery();
@@ -134,8 +146,12 @@ public class ReizigerDAOPostgres implements ReizigerDAO {
     }
     public List<Reiziger> findAll(){
         List<Reiziger> reizigers = new ArrayList<>();
+        String query = """
+                SELECT reiziger_id, voorletters, tussenvoegsel, achternaam, geboortedatum
+                FROM reiziger
+                """;
         try {
-            PreparedStatement preparedStatement = conn.prepareStatement("SELECT * FROM reiziger");
+            PreparedStatement preparedStatement = conn.prepareStatement(query);
             ResultSet resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
                 int id = resultSet.getInt("reiziger_id");
