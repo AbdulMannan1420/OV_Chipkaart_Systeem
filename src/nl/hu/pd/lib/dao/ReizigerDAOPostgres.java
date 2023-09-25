@@ -1,8 +1,10 @@
 package nl.hu.pd.lib.dao;
 
 import nl.hu.pd.lib.daoInterface.AdresDAO;
+import nl.hu.pd.lib.daoInterface.OVChipkaartDAO;
 import nl.hu.pd.lib.daoInterface.ReizigerDAO;
 import nl.hu.pd.lib.model.Adres;
+import nl.hu.pd.lib.model.OVChipkaart;
 import nl.hu.pd.lib.model.Reiziger;
 import org.postgresql.util.PSQLException;
 
@@ -14,6 +16,7 @@ import java.util.List;
 public class ReizigerDAOPostgres implements ReizigerDAO {
     private Connection conn;
     private AdresDAO ADP;
+    private OVChipkaartDAO chipDAO;
 
     public ReizigerDAOPostgres(Connection conn) {
         this.conn = conn;
@@ -22,6 +25,10 @@ public class ReizigerDAOPostgres implements ReizigerDAO {
 
     public void setAdresDAO(AdresDAO adresDAO) {
         this.ADP = adresDAO;
+    }
+
+    public void setChipDAO(OVChipkaartDAO chipDAO) {
+        this.chipDAO = chipDAO;
     }
 
     public boolean save(Reiziger reiziger){
@@ -37,6 +44,11 @@ public class ReizigerDAOPostgres implements ReizigerDAO {
             ps.close();
             if (reiziger.getAdres() != null){ // adres niet null is, sla het adres ook op
                 ADP.save(reiziger.getAdres());
+            }
+            if (reiziger.getOvChipkaarten() != null){
+                for (OVChipkaart ov: reiziger.getOvChipkaarten()) {
+                    chipDAO.save(ov);
+                }
             }
             return true;
         }
@@ -58,6 +70,11 @@ public class ReizigerDAOPostgres implements ReizigerDAO {
             if (reiziger.getAdres() != null){ // als reiziger adres heeft, moet dat ook opgeslagen worden
                 ADP.update(reiziger.getAdres());
             }
+            if(reiziger.getOvChipkaarten() != null){
+                for (OVChipkaart ov: reiziger.getOvChipkaarten()) {
+                    chipDAO.update(ov);
+                }
+            }
             return true;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -69,6 +86,11 @@ public class ReizigerDAOPostgres implements ReizigerDAO {
         try {
             if (reiziger.getAdres() != null){  // adres checken van reiziger klasse maar niet in db
                 ADP.delete(reiziger.getAdres());
+            }
+            if (reiziger.getOvChipkaarten() != null){
+                for (OVChipkaart ov: reiziger.getOvChipkaarten()) {
+                    chipDAO.delete(ov);
+                }
             }
             PreparedStatement preparedStatement = conn.prepareStatement("DELETE FROM reiziger WHERE reiziger_id=?");
             preparedStatement.setInt(1, reiziger.getId());
@@ -101,7 +123,9 @@ public class ReizigerDAOPostgres implements ReizigerDAO {
                 preparedStatement.close();
                 Reiziger reiziger = new Reiziger(id, voorletters, tussenvoegsel, achternaam, geboortedatumLocal);
                 Adres adres = ADP.findByReiziger(reiziger); // adres opzoeken
+                List<OVChipkaart> kaarten = chipDAO.findByReiziger(reiziger);
                 reiziger.setAdres(adres); // adres toevoegen aan reiziger
+                reiziger.setOvChipkaarten(kaarten);
                 return reiziger;
             }
             resultSet.close();
@@ -133,7 +157,9 @@ public class ReizigerDAOPostgres implements ReizigerDAO {
                 LocalDate geboortedatumLocal = geboortedatum.toLocalDate();
                 Reiziger reiziger = new Reiziger(id, voorletters, tussenvoegsel, achternaam, geboortedatumLocal);
                 Adres adres = ADP.findByReiziger(reiziger); // adres opzoeken
+                List<OVChipkaart> kaarten = chipDAO.findByReiziger(reiziger);
                 reiziger.setAdres(adres); // adres toevoegen aan reiziger
+                reiziger.setOvChipkaarten(kaarten);
                 reizigers.add(reiziger);
             }
             resultSet.close();
@@ -161,7 +187,9 @@ public class ReizigerDAOPostgres implements ReizigerDAO {
                 java.sql.Date geboortedatum = resultSet.getDate("geboortedatum");
                 Reiziger reiziger = new Reiziger(id, voorletters, tussenvoegsel, achternaam, geboortedatum.toLocalDate());
                 Adres adres = ADP.findByReiziger(reiziger); // adres opzoeken en toevoegen aan reiziger object
+                List<OVChipkaart> kaarten = chipDAO.findByReiziger(reiziger);
                 reiziger.setAdres(adres);
+                reiziger.setOvChipkaarten(kaarten);
                 reizigers.add(reiziger);
             }
             resultSet.close();

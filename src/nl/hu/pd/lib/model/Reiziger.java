@@ -1,6 +1,8 @@
 package nl.hu.pd.lib.model;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Reiziger {
     private int id;
@@ -9,6 +11,7 @@ public class Reiziger {
     private String achternaam;
     private LocalDate geboortedatum;
     private Adres adres; // reiziger heeft 0 of 1 adres
+    private List<OVChipkaart> ovChipkaarten = new ArrayList<>();
 
     public Reiziger(int id, String voorletters, String tussenvoegsel, String achternaam, LocalDate geboortedatum) {
         this.id = id;
@@ -18,13 +21,15 @@ public class Reiziger {
         this.geboortedatum = geboortedatum;
     }
 
-    public Reiziger(int id, String voorletters, String tussenvoegsel, String achternaam, LocalDate geboortedatum, Adres adres) {
+    public Reiziger(int id, String voorletters, String tussenvoegsel, String achternaam, LocalDate geboortedatum,
+                    Adres adres, List<OVChipkaart> ovChipkaarten) {
         this.id = id;
         this.voorletters = voorletters;
         this.tussenvoegsel = tussenvoegsel;
         this.achternaam = achternaam;
         this.geboortedatum = geboortedatum;
         this.adres = adres;
+        this.ovChipkaarten = ovChipkaarten;
     }
 
     public int getId() {
@@ -55,6 +60,15 @@ public class Reiziger {
         this.adres = adres;
     }
 
+    public List<OVChipkaart> getOvChipkaarten() {
+        return ovChipkaarten;
+    }
+
+    public void setOvChipkaarten(List<OVChipkaart> ovChipkaarten) {
+        this.ovChipkaarten = ovChipkaarten;
+    }
+
+
     public void setVoorletters(String voorletters) {
         this.voorletters = voorletters;
     }
@@ -73,7 +87,18 @@ public class Reiziger {
 
     @Override
     public String toString() {
+        StringBuilder ov = new StringBuilder();
+        ov.append("OV-Chipkaart(").append(ovChipkaarten.size()).append("): \n");
+        if(ovChipkaarten.isEmpty()){
+            ov.append("Reiziger heeft geen OV-Chipkaart");
+        }else {
+            int count = 0;
+            for (OVChipkaart o: ovChipkaarten) {
+                count++;
+                ov.append("#").append(count).append("\n").append(o);
+            }
+        }
         return voorletters+"."+" "+tussenvoegsel+" "+achternaam +" heeft id : "+id+" en geboortedatum "
-                +geboortedatum+"\n"+adres;
+                +geboortedatum+"\n"+adres +ov+"\n";
     }
 }
