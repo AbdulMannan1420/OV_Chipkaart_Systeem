@@ -66,6 +66,10 @@ public class Adres {
     }
 
     public String toString(){
-        return straat+" "+huisnummer+"\n"+postcode+", "+woonplaats+"\n";
+        String r_id = "";
+        if(reiziger != null){
+            r_id = ""+reiziger.getId();
+        }
+        return adres_id+": "+straat+" "+huisnummer+"\n"+postcode+", "+woonplaats+" Reiziger id"+r_id+"\n";
     }
 }
