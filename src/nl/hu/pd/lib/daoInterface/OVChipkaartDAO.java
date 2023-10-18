@@ -1,6 +1,7 @@
 package nl.hu.pd.lib.daoInterface;
 
 import nl.hu.pd.lib.model.OVChipkaart;
+import nl.hu.pd.lib.model.Product;
 import nl.hu.pd.lib.model.Reiziger;
 
 import java.util.List;

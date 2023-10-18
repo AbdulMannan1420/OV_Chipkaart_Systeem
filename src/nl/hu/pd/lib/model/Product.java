@@ -1,5 +1,6 @@
 package nl.hu.pd.lib.model;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Product {
@@ -7,7 +8,7 @@ public class Product {
     private String naam;
     private String beschrijving;
     private double prijs;
-    private List<OVChipkaart> ovChipkaarten;
+    private List<OVChipkaart> ovChipkaarten = new ArrayList<>();
 
     public Product(int productNummer, String naam, String beschrijving, double prijs) {
         this.productNummer = productNummer;
@@ -22,6 +23,15 @@ public class Product {
         this.beschrijving = beschrijving;
         this.prijs = prijs;
         this.ovChipkaarten = ovChipkaarten;
+    }
+
+    public boolean addOVChipkaart(OVChipkaart ovChipkaart){
+        ovChipkaarten.add(ovChipkaart);
+        return true;
+    }
+
+    public boolean removeOVChipkaart(OVChipkaart ovChipkaart){
+        return ovChipkaarten.remove(ovChipkaart);
     }
 
     public List<OVChipkaart> getOvChipkaarten() {
@@ -64,8 +74,17 @@ public class Product {
         this.prijs = prijs;
     }
 
-    public String toString() {
-        return "Product : Nummer: " + productNummer + ", naam: " + naam + ",\n" +
-                "beschrijving: " + beschrijving  + " Prijs: " + prijs;
+    public String toString() {    StringBuilder productInfo = new StringBuilder("Product : Nummer: " + productNummer + ", naam: " + naam + ",\n" +
+            "beschrijving: " + beschrijving  + " Prijs: " + prijs+"\n");
+
+        if (ovChipkaarten != null && !ovChipkaarten.isEmpty()) {
+            productInfo.append("OVChipkaarten voor deze product: ");
+            for (OVChipkaart ovChipkaart : ovChipkaarten) {
+                productInfo.append("\nKaartnummer: ").append(ovChipkaart.getKaartNummer());
+            }
+            productInfo.append("\n");
+        }
+
+        return productInfo+"";
     }
 }

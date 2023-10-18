@@ -36,11 +36,28 @@ public class OVChipkaart {
     }
 
 
-    public void addProduct(Product product){
-        products.add(product);
+    public boolean addProduct(Product product){
+        if (!products.contains(product)) {
+            this.products.add(product);
+            if (product.addOVChipkaart(this)) {
+                return true;
+            } else {
+                this.products.remove(product);
+                return false;
+            }
+        }
+        return false;
     }
-    public void removeProduct(Product product){
-        products.remove(product);
+    public boolean removeProduct(Product product){
+        if(products.contains(product)){
+            this.products.remove(product);
+            if(product.removeOVChipkaart(this)){
+                return true;
+            }else {
+                this.products.add(product);
+            }
+        }
+        return false;
     }
 
     public List<Product> getProducts() {

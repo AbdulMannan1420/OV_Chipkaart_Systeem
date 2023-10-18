@@ -142,35 +142,49 @@ public class ProductDAOPostgres implements ProductDAO {
         return products;
     }
 
-
+    @Override
     public List<Product> findAll() {
         List<Product> products = new ArrayList<>();
-        String query= """
-                SELECT ov.kaart_nummer, ov.geldig_tot, ov.klasse, ov.saldo,
-                p.naam, p.beschrijving, p.prijs, p.product_nummer
-                FROM ov_chipkaart ov
-                JOIN ov_chipkaart_product ovp
-                ON ov.kaart_nummer = ovp.kaart_nummer
-                JOIN product p
-                ON p.product_nummer = ovp.product_nummer
-                """;
+        String query1 = """
+            SELECT product_nummer, naam, beschrijving, prijs FROM product;
+            """;
+        String query2 = """
+            SELECT ov.kaart_nummer, ov.geldig_tot, ov.klasse, ov.saldo 
+            FROM ov_chipkaart_product ovp
+            JOIN ov_chipkaart ov
+            ON ovp.kaart_nummer = ov.kaart_nummer
+            WHERE ovp.product_nummer = ?;
+            """;
         try {
-            PreparedStatement ps = conn.prepareStatement(query);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()){
-                int productNummer = rs.getInt("product_nummer");
-                String naam = rs.getString("naam");
-                String beschrijving = rs.getString("beschrijving");
-                double prijs = rs.getDouble("prijs");
-//                int kaartNummer = rs.getInt("kaart_nummer");
-//                java.sql.Date sqlDate = rs.getDate("geldig_tot");
-//                LocalDate geldig = sqlDate.toLocalDate();
-//                int klasse = rs.getInt("klasse");
-//                double saldo = rs.getDouble("saldo");
+            PreparedStatement ps1 = conn.prepareStatement(query1);
+            ResultSet rs1 = ps1.executeQuery();
+            while (rs1.next()) {
+                int productNummer = rs1.getInt("product_nummer");
+                String naam = rs1.getString("naam");
+                String beschrijving = rs1.getString("beschrijving");
+                double prijs = rs1.getDouble("prijs");
                 Product product = new Product(productNummer, naam, beschrijving, prijs);
+
+                PreparedStatement ps2 = conn.prepareStatement(query2);
+                ps2.setInt(1, productNummer);
+                ResultSet rs2 = ps2.executeQuery();
+
+                while (rs2.next()) {
+                    int kaartNummer = rs2.getInt("kaart_nummer");
+                    java.sql.Date sqlDate = rs2.getDate("geldig_tot");
+                    LocalDate geldig = sqlDate.toLocalDate();
+                    int klasse = rs2.getInt("klasse");
+                    double saldo = rs2.getDouble("saldo");
+                    OVChipkaart ovChipkaart = new OVChipkaart(kaartNummer,geldig,klasse,saldo);
+                    product.addOVChipkaart(ovChipkaart);
+                }
                 products.add(product);
+                ps2.close();
+                rs2.close();
             }
-        }catch (SQLException e){
+            ps1.close();
+            rs1.close();
+        } catch (SQLException e) {
             e.printStackTrace();
         }
         return products;
